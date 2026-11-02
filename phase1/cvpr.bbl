@@ -1,0 +1,141 @@
+\begin{thebibliography}{10}\itemsep=-1pt
+
+\bibitem{alam2024ctibench}
+Md~Tanvirul Alam, Dipkamal Bhusal, Le Nguyen, and Nidhi Rastogi.
+\newblock {CTIBench}: A benchmark for evaluating {LLMs} in cyber threat
+  intelligence.
+\newblock {\em arXiv preprint arXiv:2406.07599}, 2024.
+
+\bibitem{grype}
+{Anchore}.
+\newblock Grype.
+\newblock \url{https://github.com/anchore/grype}.
+\newblock Accessed 2026-10-27.
+
+\bibitem{trivy}
+{Aqua Security}.
+\newblock Trivy.
+\newblock \url{https://github.com/aquasecurity/trivy}.
+\newblock Accessed 2026-10-27.
+
+\bibitem{cvelistv5}
+{CVE Program}.
+\newblock {cvelistV5}: {CVE} records in {CVE} {JSON} 5 format.
+\newblock \url{https://github.com/CVEProject/cvelistV5}.
+\newblock Accessed 2026-10-27.
+
+\bibitem{cisakev}
+{Cybersecurity and Infrastructure Security Agency}.
+\newblock Known exploited vulnerabilities catalog.
+\newblock \url{https://www.cisa.gov/known-exploited-vulnerabilities-catalog}.
+\newblock Catalog version 2026.10.27, 1,760 entries; accessed 2026-10-27.
+
+\bibitem{dependabot}
+{GitHub}.
+\newblock Dependabot.
+\newblock \url{https://github.com/dependabot/dependabot-core}.
+\newblock Accessed 2026-10-27.
+
+\bibitem{osv}
+{Google}.
+\newblock {OSV}: Open source vulnerability database.
+\newblock \url{https://osv.dev}.
+\newblock Accessed 2026-10-27.
+
+\bibitem{osvscanner}
+{Google}.
+\newblock {OSV-Scanner}.
+\newblock \url{https://github.com/google/osv-scanner}.
+\newblock Accessed 2026-10-27.
+
+\bibitem{jacobs2019epss}
+Jay Jacobs, Sasha Romanosky, Benjamin Edwards, Michael Roytman, and Idris
+  Adjerid.
+\newblock Exploit prediction scoring system ({EPSS}).
+\newblock {\em arXiv preprint arXiv:1908.04856}, 2019.
+\newblock Presented at Black Hat 2019.
+
+\bibitem{jacobs2023epss}
+Jay Jacobs, Sasha Romanosky, Octavian Suciu, Benjamin Edwards, and Armin
+  Sarabi.
+\newblock Enhancing vulnerability prioritization: Data-driven exploit
+  predictions with community-driven insights.
+\newblock {\em arXiv preprint arXiv:2302.14172}, 2023.
+
+\bibitem{kasai2022realtimeqa}
+Jungo Kasai, Keisuke Sakaguchi, Yoichi Takahashi, Ronan Le~Bras, et~al.
+\newblock {RealTime QA}: What's the answer right now?
+\newblock {\em arXiv preprint arXiv:2207.13332}, 2022.
+
+\bibitem{lewis2020rag}
+Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, et~al.
+\newblock Retrieval-augmented generation for knowledge-intensive {NLP} tasks.
+\newblock In {\em Advances in Neural Information Processing Systems (NeurIPS)},
+  2020.
+\newblock arXiv:2005.11401.
+
+\bibitem{cvellmdataset}
+{morpheuslord}.
+\newblock {CVE-llm\_dataset}.
+\newblock \url{https://github.com/morpheuslord/CVE-llm_dataset}.
+\newblock Accessed 2026-10-20.
+
+\bibitem{nvd}
+{National Institute of Standards and Technology}.
+\newblock National vulnerability database ({NVD}) {CVE} {API} 2.0.
+\newblock \url{https://services.nvd.nist.gov/rest/json/cves/2.0}.
+\newblock Accessed 2026-10-27.
+
+\bibitem{nvdchatbot}
+Kalyan Patel.
+\newblock {NVD-Agentic-Chatbot}.
+\newblock \url{https://github.com/kalyan-patel/NVD-Agentic-Chatbot}.
+\newblock Accessed 2026-10-20.
+
+\bibitem{schick2023toolformer}
+Timo Schick, Jane Dwivedi-Yu, Roberto Dess{\`\i}, Roberta Raileanu, et~al.
+\newblock Toolformer: Language models can teach themselves to use tools.
+\newblock {\em arXiv preprint arXiv:2302.04761}, 2023.
+
+\bibitem{spracklen2025package}
+Joseph Spracklen, Raveen Wijewickrama, A~H M~Nazmus Sakib, Anindya Maiti,
+  et~al.
+\newblock We have a package for you! {A} comprehensive analysis of package
+  hallucinations by code generating {LLMs}.
+\newblock In {\em USENIX Security Symposium}, 2025.
+\newblock arXiv:2406.10279.
+
+\bibitem{attack}
+{The MITRE Corporation}.
+\newblock {MITRE ATT\&CK}.
+\newblock \url{https://github.com/mitre/cti}.
+\newblock Enterprise ATT\&CK in STIX format; accessed 2026-10-27.
+
+\bibitem{tihanyi2024cybermetric}
+Norbert Tihanyi, Mohamed~Amine Ferrag, Ridhi Jain, Tamas Bisztray, and Merouane
+  Debbah.
+\newblock {CyberMetric}: A benchmark dataset based on retrieval-augmented
+  generation for evaluating {LLMs} in cybersecurity knowledge.
+\newblock {\em arXiv preprint arXiv:2402.07688}, 2024.
+
+\bibitem{vu2023freshllms}
+Tu Vu, Mohit Iyyer, Xuezhi Wang, Noah Constant, et~al.
+\newblock {FreshLLMs}: Refreshing large language models with search engine
+  augmentation.
+\newblock {\em arXiv preprint arXiv:2310.03214}, 2023.
+
+\bibitem{xu2024llmsecurity}
+Hanxiang Xu, Shenao Wang, Ningke Li, Kailong Wang, et~al.
+\newblock Large language models for cyber security: A systematic literature
+  review.
+\newblock {\em ACM Transactions on Software Engineering and Methodology}, 2025.
+\newblock arXiv:2405.04760.
+
+\bibitem{yao2023react}
+Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, et~al.
+\newblock {ReAct}: Synergizing reasoning and acting in language models.
+\newblock In {\em International Conference on Learning Representations (ICLR)},
+  2023.
+\newblock arXiv:2210.03629.
+
+\end{thebibliography}

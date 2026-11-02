@@ -1,0 +1,20 @@
+# course materials (not ours to redistribute)
+Assignment_5__Domain_Specific_Chatbot.pdf
+INFO7375_template_final_project/
+INFO7375_template_final_project.zip
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.blg
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*_check.*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
