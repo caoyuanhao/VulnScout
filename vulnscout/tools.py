@@ -72,6 +72,12 @@ SCHEMAS: list[dict] = [
 ]
 
 
+def function_schemas() -> list[dict]:
+    """The schemas in the ``{"type": "function", ...}`` form used by Hugging Face chat templates."""
+    return [{"type": "function", "function": {"name": s["name"], "description": s["description"],
+                                              "parameters": s["input_schema"]}} for s in SCHEMAS]
+
+
 def _finding_json(f: Finding) -> dict:
     out: dict[str, Any] = {
         "cve": f.cve.id, "rank": f.rank, "priority": ranker.tier(f) if f.status == "affected" else None,
@@ -163,6 +169,9 @@ IMPLEMENTATIONS: dict[str, Callable[..., Any]] = {
 
 def run(name: str, arguments: dict) -> tuple[str, bool]:
     """Executes a tool; returns (JSON text, is_error)."""
+    if name == "__invalid__":      # an open-weight model emitted a tool call that is not valid JSON
+        return json.dumps({"error": f"could not parse tool call: {arguments.get('error')}; "
+                                    "emit valid JSON with 'name' and 'arguments'"}), True
     if name not in IMPLEMENTATIONS:
         return json.dumps({"error": f"unknown tool {name}"}), True
     try:

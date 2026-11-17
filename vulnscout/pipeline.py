@@ -6,6 +6,7 @@ attaches KEV and EPSS signals, and ranks the affected ones with :mod:`vulnscout.
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from datetime import date
 
@@ -19,7 +20,7 @@ class LookupResult:
     product: Product
     version: str
     findings: list[Finding]
-    as_of: str = field(default_factory=lambda: date.today().isoformat())
+    as_of: str = field(default_factory=lambda: os.environ.get("VULNSCOUT_AS_OF") or date.today().isoformat())
 
     def by_status(self, status: str) -> list[Finding]:
         return [f for f in self.findings if f.status == status]

@@ -3,6 +3,7 @@
 Vulnerability data changes daily, so cached responses expire after ``ttl`` seconds (one day by
 default). The cache keeps repeated questions and evaluation runs fast and within the NVD limits
 (5 requests per 30 s without an API key, 50 with one; set ``NVD_API_KEY`` to use a key).
+Set ``VULNSCOUT_FROZEN=1`` to serve cached responses regardless of age (used for evaluation).
 """
 from __future__ import annotations
 
@@ -47,7 +48,10 @@ def fetch_json(url: str, params: dict | None = None, body: dict | None = None,
                ttl: float = DAY, timeout: float = 30.0) -> dict:
     """GETs (or POSTs ``body``) and returns parsed JSON, using the cache when it is fresh."""
     path = _cache_path(url, params, body)
-    if ttl > 0 and path.exists() and time.time() - path.stat().st_mtime < ttl:
+    # VULNSCOUT_FROZEN=1 serves cached responses regardless of age, so evaluation runs on exactly the
+    # data the reference answers were generated from (and works without network for cached requests)
+    frozen = os.environ.get("VULNSCOUT_FROZEN") == "1"
+    if path.exists() and (frozen or (ttl > 0 and time.time() - path.stat().st_mtime < ttl)):
         return json.loads(path.read_text(encoding="utf-8"))
 
     headers = {}

@@ -40,6 +40,9 @@ Scope: explain impact, exposure and remediation. Do not write exploit code or st
 For conceptual questions (what a weakness class is, how an attack technique works), answer from your knowledge, briefly, and say that the explanation is general background rather than retrieved data."""
 
 
+NO_TOOLS_PROMPT = """You are an assistant that helps software teams decide which known vulnerabilities in their dependencies to fix first. When asked about a product and version, list the CVEs that affect it, which are known to be exploited, and the version to upgrade to, in risk order. If you are unsure, say so. Do not write exploit code."""
+
+
 @dataclass
 class ToolCall:
     id: str
@@ -75,14 +78,16 @@ class Backend(Protocol):
 class ClaudeBackend:
     """Claude through the Messages API, with server-side fallback for safety-classifier declines."""
 
-    def __init__(self, model: str = "claude-opus-5-5", effort: str = "medium", client: anthropic.Anthropic | None = None):
+    def __init__(self, model: str = "claude-opus-5-5", effort: str = "medium", client: anthropic.Anthropic | None = None,
+                 use_tools: bool = True):
         self.client = client or anthropic.Anthropic()
         self.model, self.effort = model, effort
         self.messages: list[dict] = []
         self.usage = {"input_tokens": 0, "output_tokens": 0, "cache_read_input_tokens": 0,
                       "cache_creation_input_tokens": 0}
-        self.tools = [{**schema, "strict": True} for schema in tools.SCHEMAS]
-        system = SYSTEM_PROMPT + f"\n\nToday is {date.today().isoformat()}."
+        # use_tools=False is the "LLM alone" baseline: same model, answering from its own knowledge
+        self.tools = [{**schema, "strict": True} for schema in tools.SCHEMAS] if use_tools else []
+        system = (SYSTEM_PROMPT if use_tools else NO_TOOLS_PROMPT) + f"\n\nToday is {date.today().isoformat()}."
         # tools render before system, so this breakpoint caches both
         self.system = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
 
@@ -94,11 +99,11 @@ class ClaudeBackend:
             model=self.model,
             max_tokens=16000,
             system=self.system,
-            tools=self.tools,
             messages=self.messages,
             output_config={"effort": self.effort},
             betas=["server-side-fallback-2026-07-01"],
             fallbacks="default",
+            **({"tools": self.tools} if self.tools else {}),
         )
         for key in self.usage:
             self.usage[key] += getattr(response.usage, key, 0) or 0
