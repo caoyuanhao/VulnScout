@@ -18,9 +18,30 @@ This is the final project for INFO 7375 *Semantic Intelligence in LLM* (Northeas
 | Phase 1 | 2026-11-03 | Project proposal: abstract, introduction, related work, technical contribution, preliminary system design | Done: [`phase1/Phase1_YuanhaoCao.pdf`](phase1/Phase1_YuanhaoCao.pdf) |
 | Phase 2 | 2026-12-15 | Implementation, evaluation, and final report | In progress |
 
+## Quick start
+
+```
+python -m venv .venv
+.venv\Scripts\activate            # source .venv/bin/activate on Linux/macOS
+pip install -r requirements.txt
+python -m vulnscout.cli log4j-core 2.14.1
+pytest                            # offline tests; VULNSCOUT_LIVE=1 pytest tests/test_live.py for the NVD cross-check
+```
+
+Responses are cached for a day under `data/cache/`. Without an NVD API key, NVD allows 5 requests per 30 seconds. With a key in `NVD_API_KEY`, it allows 50.
+
 ## Repository layout
 
 ```
+vulnscout/                deterministic core (no LLM)
+  versions.py             version ordering; NVD CPE, OSV and CNA range semantics
+  resolver.py             multi-source verdict with provenance and confidence (contribution 1)
+  ranker.py               KEV > EPSS > CVSS prioritization with reasons (contribution 2)
+  pipeline.py             product + version -> ranked findings
+  sources/                NVD, CVE Services (CNA), OSV, CISA KEV, FIRST EPSS clients
+  products.py             seed product table (replaced by the product resolver in week 2)
+  cli.py                  command-line check
+tests/                    unit tests on saved API responses, plus a live cross-check against NVD
 phase1/                   Phase 1 proposal (LaTeX, CVPR template)
   cvpr.tex                main document
   egbib.bib               references
