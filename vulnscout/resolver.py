@@ -32,14 +32,14 @@ def _cpe_version(parts: list[str]) -> str | None:
 
 
 def nvd_cpe_evidence(cve: Cve, product: Product, version: str) -> Evidence | None:
-    if not (product.cpe_vendor and product.cpe_product):
+    if not product.cpes:
         return None
-    mentioned, matched, platform = False, [], False
+    mentioned, matched, platform, fixed = False, [], False, None
     for config in cve.configurations:
         for node in config.get("nodes", []):
             for m in node.get("cpeMatch", []):
                 parts = _CPE_SPLIT.split(m["criteria"])
-                if len(parts) < 7 or parts[3] != product.cpe_vendor or parts[4] != product.cpe_product:
+                if len(parts) < 7 or (parts[3], parts[4]) not in product.cpes:
                     continue
                 if not m.get("vulnerable", True):
                     continue
@@ -52,6 +52,8 @@ def nvd_cpe_evidence(cve: Cve, product: Product, version: str) -> Evidence | Non
                     rng = versions.cpe_range(m)
                     if rng.contains(version, product.ecosystem):
                         matched.append(str(rng))
+                        if rng.end and not rng.end_inclusive:   # an exclusive upper bound is the fix
+                            fixed = rng.end
                 if config.get("operator") == "AND":
                     platform = True
     if not mentioned:
@@ -59,7 +61,8 @@ def nvd_cpe_evidence(cve: Cve, product: Product, version: str) -> Evidence | Non
     detail = (f"matches {', '.join(matched)}" if matched else "no vulnerable CPE range contains this version")
     if matched and platform:
         detail += " (only in combination with a platform listed in the configuration)"
-    return Evidence("NVD CPE", "affected" if matched else "not_affected", detail, nvd.record_url(cve.id))
+    return Evidence("NVD CPE", "affected" if matched else "not_affected", detail, nvd.record_url(cve.id),
+                    fixed=fixed if matched else None)
 
 
 def _cna_entries(affected: list[dict], product: Product) -> tuple[list[dict], bool]:

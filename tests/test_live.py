@@ -23,7 +23,7 @@ def _ours_and_nvd(name: str, version: str) -> tuple[set[str], set[str]]:
     result = lookup(product, version)
     ours = {f.cve.id for f in result.findings
             if any(e.source == "NVD CPE" and e.status == "affected" for e in f.evidence)}
-    theirs = {c.id for c in nvd.search_product(product.cpe_vendor, product.cpe_product, version)}
+    theirs = {c.id for vendor, name in product.cpes for c in nvd.search_product(vendor, name, version)}
     return ours, theirs
 
 

@@ -8,13 +8,14 @@ from dataclasses import dataclass, field
 class Product:
     """One software product, with its identifiers in each data source.
 
-    ``cpe_vendor``/``cpe_product`` select NVD records; ``osv_ecosystem``/``osv_name`` select OSV
-    records; ``cna_names`` are the names CNAs use for the product in CVE records.
+    ``cpes`` are the NVD ``(vendor, product)`` pairs; there can be several, because CPE vendors
+    change when projects move (Spring Framework is filed under vmware, pivotal_software and
+    springsource). ``osv_ecosystem``/``osv_name`` select OSV records; ``cna_names`` are the names
+    CNAs use for the product in CVE records.
     """
 
     name: str
-    cpe_vendor: str | None = None
-    cpe_product: str | None = None
+    cpes: tuple[tuple[str, str], ...] = ()
     osv_ecosystem: str | None = None
     osv_name: str | None = None
     cna_names: tuple[str, ...] = ()

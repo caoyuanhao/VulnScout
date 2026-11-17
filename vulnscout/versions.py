@@ -44,15 +44,15 @@ def _tokens(version: str) -> list[int | str]:
     return tokens
 
 
-def _rank(token: int | str | None) -> tuple[int, int | str]:
-    """Orders tokens so that pre-release < release (missing) < number, and numbers by value."""
+def _rank(token: int | str | None) -> tuple[int, int, str]:
+    """Orders tokens so that pre-release < release (missing) < unknown qualifier < number."""
     if token is None or token in _RELEASE:
-        return (1, 0)
+        return (1, 0, "")
     if isinstance(token, int):
-        return (2, token)
+        return (2, token, "")
     if token in _PRE_RELEASE:
-        return (0, _PRE_RELEASE[token])
-    return (1, token)  # unknown qualifier such as "sp" or "jre": just after the plain release
+        return (0, _PRE_RELEASE[token], "")
+    return (1, 1, token)  # unknown qualifier such as "sp" or "jre": just after the plain release
 
 
 def compare(a: str, b: str, ecosystem: str | None = None) -> int:

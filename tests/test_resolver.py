@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from vulnscout import products, ranker, resolver
+from vulnscout import products, ranker, resolver, tools
 from vulnscout.models import Cve, Finding
 from vulnscout.sources import nvd
 
@@ -44,6 +44,24 @@ def test_nvd_cpe(log4shell, version, status):
     assert ev.record == "https://nvd.nist.gov/vuln/detail/CVE-2021-44228"
 
 
+def test_nvd_cpe_fix_is_exclusive_upper_bound(log4shell):
+    assert resolver.nvd_cpe_evidence(log4shell, LOG4J, "2.14.1").fixed == "2.15.0"
+    assert resolver.nvd_cpe_evidence(log4shell, LOG4J, "2.5").fixed == "2.12.2"
+
+
+def test_upgrade_target_iterates_past_newer_cves(monkeypatch):
+    # 1.0 is hit by A (fixed 4.17.21); 4.17.21 is hit by a newer B (fixed 4.18.1); 4.18.1 is clean
+    affected_by = {"4.17.21": [_finding("B", 9.8, 0.1, fixed="4.18.1")], "4.18.1": []}
+
+    class Result:
+        def __init__(self, version):
+            self.ranked = affected_by[version]
+
+    monkeypatch.setattr(tools, "lookup", lambda product, version: Result(version))
+    target, still = tools._upgrade_target(LOG4J, [_finding("A", 7.2, 0.2, fixed="4.17.21")])
+    assert (target, still) == ("4.18.1", [])
+
+
 def test_nvd_cpe_ignores_other_products(log4shell):
     other = products.find("requests")
     assert resolver.nvd_cpe_evidence(log4shell, other, "2.14.1") is None
@@ -81,8 +99,8 @@ def test_resolve_unknown_without_sources():
     assert (f.status, f.confidence) == ("unknown", "low")
 
 
-def _finding(cid, cvss, epss, kev=False, ransomware=False):
-    return Finding(Cve(id=cid, cvss=cvss), "affected", "NVD CPE", "high", [],
+def _finding(cid, cvss, epss, kev=False, ransomware=False, fixed=None):
+    return Finding(Cve(id=cid, cvss=cvss), "affected", "NVD CPE", "high", [], fixed=fixed,
                    in_kev=kev, kev_ransomware=ransomware, kev_date_added="2021-12-10" if kev else None,
                    epss=epss, epss_percentile=0.5)
 

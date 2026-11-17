@@ -24,9 +24,12 @@ This is the final project for INFO 7375 *Semantic Intelligence in LLM* (Northeas
 python -m venv .venv
 .venv\Scripts\activate            # source .venv/bin/activate on Linux/macOS
 pip install -r requirements.txt
-python -m vulnscout.cli log4j-core 2.14.1
+python -m vulnscout.cli log4j-core 2.14.1          # deterministic core only, no LLM
+python -m vulnscout.chat                           # chat with the agent (Claude)
 pytest                            # offline tests; VULNSCOUT_LIVE=1 pytest tests/test_live.py for the NVD cross-check
 ```
+
+The chat agent calls Claude through the Anthropic SDK. It picks up an `ant auth login` profile or `ANTHROPIC_API_KEY`.
 
 Responses are cached for a day under `data/cache/`. Without an NVD API key, NVD allows 5 requests per 30 seconds. With a key in `NVD_API_KEY`, it allows 50.
 
@@ -39,7 +42,11 @@ vulnscout/                deterministic core (no LLM)
   ranker.py               KEV > EPSS > CVSS prioritization with reasons (contribution 2)
   pipeline.py             product + version -> ranked findings
   sources/                NVD, CVE Services (CNA), OSV, CISA KEV, FIRST EPSS clients
-  products.py             seed product table (replaced by the product resolver in week 2)
+  catalog.py              verifies product identifiers (NVD CPE dictionary, deps.dev)
+  tools.py                tool schemas and implementations exposed to the model
+  agent.py                tool-use loop with a pluggable model backend (Claude now, open-weight model next)
+  chat.py                 terminal chat
+  products.py             seed product table for the CLI and tests
   cli.py                  command-line check
 tests/                    unit tests on saved API responses, plus a live cross-check against NVD
 phase1/                   Phase 1 proposal (LaTeX, CVPR template)

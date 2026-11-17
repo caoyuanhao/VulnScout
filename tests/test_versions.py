@@ -14,6 +14,8 @@ from vulnscout import versions as v
     ("v1.2.3", "1.2.3", 0),                 # Go-style prefix
     ("1.2.3+build.5", "1.2.3", 0),          # build metadata ignored
     ("2.3.2", "2.3.10", -1),
+    ("1.0.sp1", "1.0", 1),                  # unknown qualifier after the release...
+    ("1.0.sp1", "1.0.1", -1),               # ...but before the next number
 ])
 def test_compare_generic(a, b, expected):
     assert v.compare(a, b) == expected

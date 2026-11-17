@@ -31,8 +31,8 @@ class LookupResult:
 
 def lookup(product: Product, version: str) -> LookupResult:
     cves: dict[str, Cve] = {}
-    if product.cpe_vendor and product.cpe_product:
-        for c in nvd.search_product(product.cpe_vendor, product.cpe_product):
+    for vendor, name in product.cpes:
+        for c in nvd.search_product(vendor, name):
             cves[c.id] = c
 
     advisories_by_cve: dict[str, list[dict]] = {}
