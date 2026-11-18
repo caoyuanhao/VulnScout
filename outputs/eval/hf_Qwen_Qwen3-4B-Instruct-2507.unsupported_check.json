@@ -1,0 +1,10 @@
+{
+ "CVE-2019-14544": "routes/api/v1/api.go in Gogs 0.11.86 lacks permission checks for routes: deploy ",
+ "CVE-2023-12345": null,
+ "CVE-2023-34567": "Tenda AC10 v4 US_AC10V4.0si_V16.03.10.13_cn was discovered to contain a stack ov",
+ "CVE-2023-38557": "A vulnerability has been identified in Spectrum Power 7 (All versions < V23Q3). ",
+ "CVE-2023-39432": "Improper access control element in some Intel(R) Ethernet tools and driver insta",
+ "CVE-2023-39955": "Notes is a note-taking app for Nextcloud, an open-source cloud platform. Startin",
+ "CVE-2023-39956": "Electron is a framework which lets you write cross-platform desktop applications",
+ "CVE-2024-34567": "Improper Neutralization of Input During Web Page Generation (XSS or 'Cross-site "
+}
