@@ -18,7 +18,7 @@ import re
 import time
 from pathlib import Path
 
-from .agent import Agent, Answer, ClaudeBackend
+from .agent import Agent, Answer, ClaudeBackend, ToolCall
 
 CVE = re.compile(r"CVE-\d{4}-\d{4,}")
 LINKED_CVE = re.compile(r"\[(CVE-\d{4}-\d{4,})\]\(https?://[^)]+\)")
@@ -47,7 +47,9 @@ def reference(record: dict) -> dict:
 # the answer must actually tell the user the package or version was not found (an empty answer is wrong)
 NOT_FOUND = re.compile(r"(does ?n[o']t|did ?n[o']t) exist|is ?n[o']t (a )?(known|published|listed)|not (a )?known|"
                        r"(could ?n[o']t|can ?n[o']t|could not|cannot|did ?n[o']t) find|never (been )?published|"
-                       r"not (been )?published|no (\S+ ){0,3}(release|version|match|package|product)|not found|unknown", re.I)
+                       r"not (been )?published|no (\S+ ){0,3}(release|version|match|package|product)|not found|unknown|"
+                       r"(could ?n[o']t|could not|can ?n[o']t|cannot) (identify|locate|confirm)|found nothing|"
+                       r"(is ?n[o']t|not) a real", re.I)
 
 
 def score(ref: dict, answer) -> dict:
@@ -129,13 +131,46 @@ def summarize(rows: list[dict]) -> dict:
     }
 
 
+def rescore(path: Path, data: Path) -> None:
+    """Re-scores saved answers with the current scoring rules, without calling any model.
+
+    Runs saved before tool results were stored have no ``result`` fields; for those only the
+    special-case ``correct`` scores (which depend on the answer text) are recomputed, since the
+    hallucination check needs the tool results.
+    """
+    refs = {r["id"]: r for r in (reference(json.loads(line)) for line in data.read_text(encoding="utf-8").splitlines())}
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    changed = 0
+    for row in rows:
+        have_results = all("result" in t for t in row["tools"])
+        calls = [ToolCall(f"c{k}", t["name"], t["arguments"], t.get("result", "{}"), t["error"])
+                 for k, t in enumerate(row["tools"])]
+        new = score(refs[row["id"]], Answer(text=row["answer"], tool_calls=calls, steps=row["score"].get("steps", 0),
+                                             refused=row["score"].get("refused", False)))
+        if not have_results:
+            new = {**row["score"], **{k: new[k] for k in ("correct", "asked_for_version") if k in new}}
+        changed += new != row["score"]
+        row["score"] = new
+    path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
+    summary = summarize(rows)
+    path.with_suffix(".summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    print(f"{changed} of {len(rows)} rows changed")
+    print(json.dumps(summary, indent=2))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--backend", required=True)
+    ap.add_argument("--backend")
     ap.add_argument("--data", type=Path, default=Path("data/sft/test.jsonl"))
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--out", type=Path, default=Path("outputs/eval"))
+    ap.add_argument("--rescore", type=Path, metavar="JSONL", help="re-score a saved run instead of running a backend")
     args = ap.parse_args()
+    if args.rescore:
+        rescore(args.rescore, args.data)
+        return
+    if not args.backend:
+        ap.error("--backend is required unless --rescore is given")
 
     records = [json.loads(line) for line in args.data.read_text(encoding="utf-8").splitlines()][:args.limit]
     args.out.mkdir(parents=True, exist_ok=True)
@@ -158,7 +193,8 @@ def main() -> None:
                 print(f"[{i}/{len(records)}] {ref['id']}: out of memory, scored as a failed answer", flush=True)
                 answer = Answer(text="")
             row = {"id": ref["id"], "kind": ref["kind"], "question": ref["question"], "answer": answer.text,
-                   "tools": [{"name": c.name, "arguments": c.arguments, "error": c.is_error} for c in answer.tool_calls],
+                   "tools": [{"name": c.name, "arguments": c.arguments, "error": c.is_error, "result": c.result}
+                             for c in answer.tool_calls],
                    "seconds": round(time.perf_counter() - t0, 1), "usage": dict(getattr(backend, "usage", {})),
                    "score": score(ref, answer)}
             rows.append(row)

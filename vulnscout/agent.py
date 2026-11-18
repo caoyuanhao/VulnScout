@@ -11,7 +11,7 @@ import json
 import time
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Protocol
+from typing import Callable, Protocol
 
 import anthropic
 
@@ -125,7 +125,9 @@ class Agent:
         self.backend = backend or ClaudeBackend()
         self.verbose = verbose
 
-    def ask(self, question: str) -> Answer:
+    def ask(self, question: str, on_tool: Callable[[ToolCall, bool], None] | None = None) -> Answer:
+        """Answers one user turn. ``on_tool(call, done)`` is called before and after each tool runs
+        (the web UI uses it to show progress)."""
         self.backend.add_user(question)
         calls: list[ToolCall] = []
         for step in range(1, MAX_STEPS + 1):
@@ -139,9 +141,13 @@ class Agent:
             if not turn.tool_calls:
                 return Answer(turn.text, calls, step, usage=getattr(self.backend, "usage", {}))
             for call in turn.tool_calls:
+                if on_tool:
+                    on_tool(call, False)
                 start = time.perf_counter()
                 call.result, call.is_error = tools.run(call.name, call.arguments)
                 call.seconds = time.perf_counter() - start
+                if on_tool:
+                    on_tool(call, True)
                 if self.verbose:
                     print(f"  [tool] {call.name}({json.dumps(call.arguments, ensure_ascii=False)[:150]})"
                           f" -> {len(call.result)} chars{' ERROR' if call.is_error else ''}, {call.seconds:.1f}s")
