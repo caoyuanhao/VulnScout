@@ -10,7 +10,7 @@ import inspect
 import json
 from typing import Any, Callable
 
-from . import catalog, ranker, versions
+from . import catalog, knowledge, ranker, versions
 from .models import Finding, Product
 from .pipeline import lookup
 from .sources import epss, kev, nvd
@@ -70,6 +70,24 @@ SCHEMAS: list[dict] = [
         "input_schema": _obj({"cve_id": {"type": "string", "description": "e.g. CVE-2021-44228"}}, ["cve_id"]),
     },
 ]
+
+
+# Retrieval over MITRE CWE and ATT&CK for conceptual questions. Kept out of SCHEMAS: the fine-tuning
+# data and the lookup evaluation use the four lookup tools only, so their prompts stay identical.
+KNOWLEDGE_SCHEMA = {
+    "name": "search_security_knowledge",
+    "description": "Search the MITRE CWE weakness catalog and the ATT&CK Enterprise technique catalog. Use it for "
+                   "conceptual questions (what a weakness class or attack technique is, how it works, how to "
+                   "mitigate it) and to explain the CWE of a CVE. Accepts free text or IDs such as CWE-502 or "
+                   "T1190. Returns the best match in full (consequences, mitigations, example CVEs) and others "
+                   "briefly, each with its official URL. It does not know about specific products or CVEs.",
+    "input_schema": _obj({
+        "query": {"type": "string", "description": "e.g. 'SQL injection', 'CWE-79', 'T1190 exploit public-facing application'"},
+        "source": {"type": "string", "enum": ["any", "cwe", "attack"],
+                   "description": "Restrict to CWE weaknesses or ATT&CK techniques, or 'any'"},
+    }, ["query", "source"]),
+}
+ALL_SCHEMAS = SCHEMAS + [KNOWLEDGE_SCHEMA]
 
 
 def function_schemas() -> list[dict]:
@@ -164,6 +182,7 @@ IMPLEMENTATIONS: dict[str, Callable[..., Any]] = {
     "check_package": catalog.check_package,
     "lookup_vulnerabilities": lookup_vulnerabilities,
     "get_cve": get_cve,
+    "search_security_knowledge": lambda query, source="any": knowledge.search(query, source),
 }
 
 

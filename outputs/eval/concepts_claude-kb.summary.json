@@ -1,0 +1,7 @@
+{
+  "mentions_expected": 1.0,
+  "cites_expected_url": 1.0,
+  "used_knowledge_tool": 1.0,
+  "answers_with_unknown_ids": 0.0,
+  "cost_total": 1.08
+}

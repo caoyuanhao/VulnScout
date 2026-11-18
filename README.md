@@ -26,6 +26,7 @@ python -m venv .venv
 pip install -r requirements.txt
 python -m vulnscout.cli log4j-core 2.14.1          # deterministic core only, no LLM
 python -m vulnscout.chat                           # chat with the agent (Claude)
+python -m vulnscout.knowledge --build              # one-time: download MITRE CWE + ATT&CK and build the concept index
 python -m vulnscout.web                            # web chat UI at http://127.0.0.1:7860
 pytest                            # offline tests; VULNSCOUT_LIVE=1 pytest tests/test_live.py for the NVD cross-check
 ```

@@ -27,16 +27,19 @@ EXAMPLES = [
     "Is lodash 4.17.15 affected by anything that is actively exploited?",
     "Is spring-core vulnerable?",
     "We pulled in the npm package lodahs 4.17.21. Any known CVEs?",
+    "What is insecure deserialization (CWE-502) and how do we prevent it?",
 ]
 LABELS = {
     "search_cpe": "Searching the NVD product dictionary",
     "check_package": "Checking the package registry",
     "lookup_vulnerabilities": "Looking up vulnerabilities",
     "get_cve": "Fetching CVE record",
+    "search_security_knowledge": "Searching CWE / ATT&CK",
 }
 INTRO = """# VulnScout
 Ask which known vulnerabilities affect a dependency version and what to fix first.
-Answers are built from NVD, CVE.org (CNA), OSV, the CISA KEV catalog and FIRST EPSS, queried live;
+Answers are built from NVD, CVE.org (CNA), OSV, the CISA KEV catalog and FIRST EPSS, queried live,
+and MITRE CWE / ATT&CK for concepts;
 each step VulnScout takes is shown above its answer. Not a substitute for a security review."""
 
 
@@ -50,6 +53,8 @@ def _call_title(call: ToolCall) -> str:
         what = f"{a.get('product_name', '')} {a.get('version', '')}"
     elif call.name == "get_cve":
         what = a.get("cve_id", "")
+    elif call.name == "search_security_knowledge":
+        what = a.get("query", "")
     else:
         what = ""
     return f"🔧 {LABELS.get(call.name, call.name)}: {what}".rstrip(": ")
@@ -75,6 +80,9 @@ def _call_summary(call: ToolCall) -> str:
             line = f"Package exists, {data.get('versions_published')} versions, latest {data.get('latest')}."
             if data.get("version_published") is False:
                 line += " The requested version was never published."
+    elif call.name == "search_security_knowledge":
+        hits = data.get("results", [])
+        line = "Matches: " + (", ".join(f"{h['id']} {h['name']}" for h in hits[:5]) or "none")
     elif call.name == "search_cpe":
         hits = data.get("results", [])
         line = "Matches: " + (", ".join(f"{h['vendor']}:{h['product']}" for h in hits[:5]) or "none")

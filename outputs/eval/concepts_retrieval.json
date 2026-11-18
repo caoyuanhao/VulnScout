@@ -1,0 +1,118 @@
+{
+  "all": {
+    "n": 36,
+    "hit@1": 0.667,
+    "hit@5": 0.833,
+    "mrr": 0.737
+  },
+  "direct": {
+    "n": 24,
+    "hit@1": 0.792,
+    "hit@5": 0.958,
+    "mrr": 0.875
+  },
+  "paraphrased": {
+    "n": 12,
+    "hit@1": 0.417,
+    "hit@5": 0.583,
+    "mrr": 0.461
+  },
+  "misses": [
+    [
+      "What is cross-site scripting and how do I prevent it?",
+      [
+        "CWE-692",
+        "CWE-79",
+        "CWE-352"
+      ]
+    ],
+    [
+      "What does missing authentication for a critical function mean?",
+      [
+        "CWE-304",
+        "CWE-306",
+        "CWE-456"
+      ]
+    ],
+    [
+      "What is an integer overflow?",
+      [
+        "CWE-680",
+        "CWE-190",
+        "CWE-121"
+      ]
+    ],
+    [
+      "How does spearphishing with attachments work as an attack technique?",
+      [
+        "T1566.003",
+        "T1566.002",
+        "T1203"
+      ]
+    ],
+    [
+      "What is a supply chain compromise in ATT&CK?",
+      [
+        "T1195.003",
+        "T1195.002",
+        "T1195"
+      ]
+    ],
+    [
+      "An attacker typed ' OR 1=1 -- into our login form and got in. What class of bug is that?",
+      [
+        "CWE-193",
+        "CWE-104",
+        "CWE-496"
+      ]
+    ],
+    [
+      "Someone got our web page to run their JavaScript in other users' browsers. What weakness is that?",
+      [
+        "CWE-83",
+        "T1539",
+        "CWE-79"
+      ]
+    ],
+    [
+      "Our app turns user-supplied Java objects back from bytes, and someone got code execution. What weakness is this?",
+      [
+        "T1559.001",
+        "T1574.005",
+        "CWE-111"
+      ]
+    ],
+    [
+      "A user requested ../../etc/passwd from our file download endpoint and got it. What is this called?",
+      [
+        "T1003.008",
+        "T1087.001",
+        "T1556.003"
+      ]
+    ],
+    [
+      "Our server fetches any URL the user gives it, and someone used that to reach the cloud metadata endpoint. What weakness is that?",
+      [
+        "T1567.004",
+        "T1552.005",
+        "CWE-384"
+      ]
+    ],
+    [
+      "A malicious website made our logged-in users' browsers submit a money transfer form. What is this attack called?",
+      [
+        "T1696.002",
+        "T1189",
+        "T1696"
+      ]
+    ],
+    [
+      "Attackers pushed a backdoored version of a library we depend on to the package registry. Which ATT&CK technique is that?",
+      [
+        "CWE-492",
+        "T1547.002",
+        "T1525"
+      ]
+    ]
+  ]
+}

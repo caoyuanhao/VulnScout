@@ -1,21 +1,21 @@
 {
-  "n": 15,
+  "n": 119,
   "lookup": {
     "called_lookup": 1.0,
-    "cpes_exact": 1.0,
+    "cpes_exact": 0.875,
     "package_correct": 1.0,
-    "cve_recall": 1.0,
+    "cve_recall": 0.998,
     "cve_precision": 1.0,
     "top_cve_mentioned": 1.0,
     "kev_recall": null,
     "upgrade_correct": 1.0,
     "clean_correct": 1.0,
-    "citation_rate": 0.966
+    "citation_rate": 0.855
   },
   "answers_with_hallucinated_cves": 0.0,
   "hallucinated_cves_total": 0,
   "special_cases_correct": 1.0,
-  "mean_tool_calls": 2.733,
+  "mean_tool_calls": 2.756,
   "tool_errors_total": 0,
-  "n_lookup": 12
+  "n_lookup": 96
 }

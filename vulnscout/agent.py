@@ -39,6 +39,9 @@ Scope: explain impact, exposure and remediation. Do not write exploit code or st
 
 For conceptual questions (what a weakness class is, how an attack technique works), answer from your knowledge, briefly, and say that the explanation is general background rather than retrieved data."""
 
+# Replaces the last paragraph of SYSTEM_PROMPT when the CWE/ATT&CK retrieval tool is enabled.
+KNOWLEDGE_PROMPT = """For conceptual questions (what a weakness class is, how an attack technique works, how to prevent it), call search_security_knowledge and base the explanation on the entries it returns, citing each with a markdown link to its url (e.g. [CWE-89](https://cwe.mitre.org/data/definitions/89.html)). Keep it short: what it is, why it matters, how to prevent or detect it. If no entry fits, say so and answer briefly from general knowledge, labelled as such. When a lookup result lists a CWE and the user asks what it means, use the same tool."""
+
 
 NO_TOOLS_PROMPT = """You are an assistant that helps software teams decide which known vulnerabilities in their dependencies to fix first. When asked about a product and version, list the CVEs that affect it, which are known to be exploited, and the version to upgrade to, in risk order. If you are unsure, say so. Do not write exploit code."""
 
@@ -79,15 +82,21 @@ class ClaudeBackend:
     """Claude through the Messages API, with server-side fallback for safety-classifier declines."""
 
     def __init__(self, model: str = "claude-opus-5-5", effort: str = "medium", client: anthropic.Anthropic | None = None,
-                 use_tools: bool = True):
+                 use_tools: bool = True, knowledge: bool = True):
         self.client = client or anthropic.Anthropic()
         self.model, self.effort = model, effort
         self.messages: list[dict] = []
         self.usage = {"input_tokens": 0, "output_tokens": 0, "cache_read_input_tokens": 0,
                       "cache_creation_input_tokens": 0}
-        # use_tools=False is the "LLM alone" baseline: same model, answering from its own knowledge
-        self.tools = [{**schema, "strict": True} for schema in tools.SCHEMAS] if use_tools else []
-        system = (SYSTEM_PROMPT if use_tools else NO_TOOLS_PROMPT) + f"\n\nToday is {date.today().isoformat()}."
+        # use_tools=False is the "LLM alone" baseline: same model, answering from its own knowledge.
+        # knowledge=True adds CWE/ATT&CK retrieval; the lookup evaluation runs with knowledge=False so its
+        # prompt and tool list match the earlier runs and the fine-tuned model's.
+        schemas = tools.ALL_SCHEMAS if knowledge else tools.SCHEMAS
+        self.tools = [{**schema, "strict": True} for schema in schemas] if use_tools else []
+        system = SYSTEM_PROMPT if use_tools else NO_TOOLS_PROMPT
+        if use_tools and knowledge:
+            system = system.rsplit("\n\n", 1)[0] + "\n\n" + KNOWLEDGE_PROMPT
+        system += f"\n\nToday is {date.today().isoformat()}."
         # tools render before system, so this breakpoint caches both
         self.system = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
 

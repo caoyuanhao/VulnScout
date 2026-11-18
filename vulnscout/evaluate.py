@@ -20,8 +20,12 @@ from pathlib import Path
 
 from .agent import Agent, Answer, ClaudeBackend, ToolCall
 
-CVE = re.compile(r"CVE-\d{4}-\d{4,}")
-LINKED_CVE = re.compile(r"\[(CVE-\d{4}-\d{4,})\]\(https?://[^)]+\)")
+# vulnerability IDs: CVEs and, for OSV-only findings, GitHub advisories. The lookahead skips group
+# shorthands such as "CVE-2026-1064xx" (several IDs sharing a prefix), which are not IDs themselves.
+_VULN_ID = r"(?:CVE-\d{4}-\d{4,}|GHSA(?:-[0-9a-z]{4}){3})(?![0-9A-Za-z])"
+CVE = re.compile(_VULN_ID)
+GHSA = re.compile(r"GHSA(?:-[0-9a-z]{4}){3}")
+LINKED_CVE = re.compile(r"\[(" + _VULN_ID + r")\]\(https?://[^)]+\)")
 
 
 def reference(record: dict) -> dict:
@@ -33,6 +37,10 @@ def reference(record: dict) -> dict:
         if m["role"] == "tool" and m["name"] == "lookup_vulnerabilities":
             r = json.loads(m["content"])
             ref["affected"] = [f["cve"] for f in r["affected"]] + r.get("more_affected", [])
+            # GitHub advisory IDs that the tool output ties to a CVE (e.g. in an OSV evidence URL), so an
+            # answer citing the advisory instead of the CVE is credited with that CVE
+            ref["aliases"] = {g: f["cve"] for f in r["affected"] + r.get("unknown", []) if f["cve"].startswith("CVE-")
+                              for g in GHSA.findall(json.dumps(f))}
             ref["unknown"] = [u["cve"] for u in r.get("unknown", [])]
             ref["kev"] = [f["cve"] for f in r["affected"] if f.get("cisa_kev")]
             ref["top"] = r["affected"][0]["cve"] if r["affected"] else None
@@ -46,16 +54,17 @@ def reference(record: dict) -> dict:
 
 # the answer must actually tell the user the package or version was not found (an empty answer is wrong)
 NOT_FOUND = re.compile(r"(does ?n[o']t|did ?n[o']t) exist|is ?n[o']t (a )?(known|published|listed)|not (a )?known|"
-                       r"(could ?n[o']t|can ?n[o']t|could not|cannot|did ?n[o']t) find|never (been )?published|"
-                       r"not (been )?published|no (\S+ ){0,3}(release|version|match|package|product)|not found|unknown|"
+                       r"(could ?n[o']t|can ?n[o']t|could not|cannot|did ?n[o']t) find|never (been )?(published|released)|"
+                       r"not (been )?(published|released)|no (\S+ ){0,3}(release|version|match|package|product)|not found|unknown|"
                        r"(could ?n[o']t|could not|can ?n[o']t|cannot) (identify|locate|confirm)|found nothing|"
                        r"(is ?n[o']t|not) a real", re.I)
 
 
 def score(ref: dict, answer) -> dict:
     text = answer.text
-    mentioned = set(CVE.findall(text))
-    linked = set(LINKED_CVE.findall(text))
+    alias = ref.get("aliases", {})
+    mentioned = {alias.get(i, i) for i in CVE.findall(text)}
+    linked = {alias.get(i, i) for i in LINKED_CVE.findall(text)}
     supported = set(ref.get("affected", [])) | set(ref.get("unknown", []))   # ground truth for this question
     for c in answer.tool_calls:
         supported |= set(CVE.findall(c.result))
@@ -95,12 +104,13 @@ def score(ref: dict, answer) -> dict:
 
 
 def make_backend(spec: str):
+    # the lookup evaluation leaves out the CWE/ATT&CK tool, as in the fine-tuning data
     if spec == "claude":
-        return ClaudeBackend()
+        return ClaudeBackend(knowledge=False)
     if spec == "claude-no-tools":
         return ClaudeBackend(use_tools=False)
     if spec.startswith("claude:"):
-        return ClaudeBackend(model=spec.split(":", 1)[1])
+        return ClaudeBackend(model=spec.split(":", 1)[1], knowledge=False)
     if spec.startswith("hf:"):
         from .hf_backend import HFBackend
         model, _, adapter = spec[3:].partition("+")
@@ -134,9 +144,10 @@ def summarize(rows: list[dict]) -> dict:
 def rescore(path: Path, data: Path) -> None:
     """Re-scores saved answers with the current scoring rules, without calling any model.
 
-    Runs saved before tool results were stored have no ``result`` fields; for those only the
-    special-case ``correct`` scores (which depend on the answer text) are recomputed, since the
-    hallucination check needs the tool results.
+    Runs saved before tool results were stored have no ``result`` fields. For those, everything that
+    depends only on the answer text, the tool arguments and the reference is recomputed; the
+    hallucination check, which needs the tool results, keeps its earlier verdicts (minus IDs the
+    current pattern no longer extracts).
     """
     refs = {r["id"]: r for r in (reference(json.loads(line)) for line in data.read_text(encoding="utf-8").splitlines())}
     rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
@@ -148,7 +159,9 @@ def rescore(path: Path, data: Path) -> None:
         new = score(refs[row["id"]], Answer(text=row["answer"], tool_calls=calls, steps=row["score"].get("steps", 0),
                                              refused=row["score"].get("refused", False)))
         if not have_results:
-            new = {**row["score"], **{k: new[k] for k in ("correct", "asked_for_version") if k in new}}
+            # without the tool results an ID cannot be newly flagged as unsupported; keep the earlier
+            # verdicts, minus any the current ID pattern no longer extracts from the answer
+            new["hallucinated_cves"] = sorted(set(row["score"]["hallucinated_cves"]) & set(new["hallucinated_cves"]))
         changed += new != row["score"]
         row["score"] = new
     path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
