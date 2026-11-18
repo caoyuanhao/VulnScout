@@ -65,7 +65,7 @@ def main(log: Path, out: Path) -> None:
     ax.set_xlim(-3, total + 8)
     ax.set_xlabel("optimizer step (8 dialogues each)")
     ax.set_ylabel("cross-entropy, assistant tokens")
-    ax.legend(loc="lower left", frameon=False, handlelength=1.6, borderaxespad=0.2)
+    ax.legend(loc="upper right", bbox_to_anchor=(1.0, 0.88), frameon=False, handlelength=1.6, borderaxespad=0.2)
     fig.tight_layout(pad=0.3)
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out)

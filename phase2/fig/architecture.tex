@@ -1,0 +1,90 @@
+% Final system design of VulnScout. Requires tikz with arrows.meta, positioning, fit, backgrounds.
+% Blue: LLM; orange: deterministic code; gray: external data (dashed arrows); green: user-facing;
+% purple: offline training and evaluation.
+\begin{tikzpicture}[
+    box/.style={draw=black!60, rounded corners=3pt, align=center, font=\scriptsize,
+                minimum height=0.8cm, fill=white, inner sep=2.5pt,
+                execute at begin node={\hyphenpenalty=10000\relax}},
+    llm/.style={box, fill=blue!8, draw=blue!55, text width=2.45cm},
+    tool/.style={box, fill=orange!10, draw=orange!70!black, minimum height=0.6cm, text width=3.6cm},
+    core/.style={box, fill=orange!10, draw=orange!70!black, text width=2.95cm},
+    data/.style={box, fill=gray!10, draw=gray!60, text width=2.05cm, minimum height=0.56cm},
+    io/.style={box, fill=green!8, draw=green!50!black, text width=1.85cm},
+    off/.style={box, fill=violet!7, draw=violet!60, text width=2.45cm},
+    group/.style={draw=black!35, dashed, rounded corners=4pt, inner sep=5pt},
+    glabel/.style={font=\scriptsize\bfseries, black!65, inner sep=1.5pt},
+    arr/.style={-{Stealth[length=1.8mm]}, thick, black!65},
+    darr/.style={-{Stealth[length=1.6mm]}, semithick, black!45, dashed},
+    lbl/.style={font=\tiny, black!70, fill=white, inner sep=1pt},
+]
+% ---------------- user, agent and its two backends ----------------
+\node[io]  (user)  at (0,0) {\textbf{User}\\web UI (Gradio) or terminal chat};
+\node[llm, font=\footnotesize, minimum height=1.05cm] (agent) at (3.1,0)
+      {\textbf{Agent loop}\\plans tool calls, writes the cited answer};
+\node[llm] (claude) at (3.1,-1.5) {\textbf{Claude Opus 5.5}\\Messages API, strict tool schemas};
+\node[llm] (qwen)   at (3.1,-2.6) {\textbf{Qwen3-4B + LoRA}\\local; parses \texttt{<tool\_call>}};
+\draw[black!45, semithick] (agent.south) -- node[lbl]{backend, one of} (claude.north);
+\draw[black!45, semithick] (claude.south) -- (qwen.north);
+
+\draw[arr] ([yshift=5pt]user.east) -- node[lbl, above=1pt]{question} ([yshift=5pt]agent.west);
+\draw[arr] ([yshift=-5pt]agent.west) -- node[lbl, below=1pt]{answer} ([yshift=-5pt]user.east);
+
+% ---------------- tools ----------------
+\node[tool] (t1) at (6.85, 0.55) {\texttt{search\_cpe}\quad NVD product IDs};
+\node[tool] (t2) at (6.85,-0.2)  {\texttt{check\_package}\quad registry, versions};
+\node[tool] (t4) at (6.85,-0.95) {\texttt{get\_cve}\quad one CVE record};
+\node[tool, fill=orange!24] (t3) at (6.85,-2.1)
+      {\texttt{lookup\_vulnerabilities}\\product + version $\rightarrow$ ranked findings};
+\node[tool] (t5) at (6.85,-3.3) {\texttt{search\_security\_knowledge}\\CWE / ATT\&CK concepts};
+\begin{scope}[on background layer]
+  \node[group, fit=(t1)(t5), inner ysep=6pt] (tools) {};
+\end{scope}
+\node[glabel, anchor=south] at (tools.north) {Tools (JSON in, JSON out)};
+\draw[arr, {Stealth[length=1.8mm]}-{Stealth[length=1.8mm]}] (agent.east) --
+      node[lbl, above=1pt]{tool calls} node[lbl, below=1pt]{results} (agent.east -| tools.west);
+
+% ---------------- deterministic core ----------------
+\node[core] (c1) at (10.6,-1.85) {\textbf{Candidate collection}\\NVD by CPE $\cup$ OSV by package};
+\node[core] (c2) at (10.6,-3.05) {\textbf{Multi-source resolver}\\NVD CPE $>$ CNA $>$ OSV;\\provenance, confidence};
+\node[core] (c3) at (10.6,-4.25) {\textbf{Risk ranking}\\KEV (ransomware) $>$ EPSS $>$ CVSS};
+\node[core] (c4) at (10.6,-5.4) {\textbf{Upgrade target}\\fixed point over all findings};
+\draw[arr] (c1) -- (c2);
+\draw[arr] (c2) -- (c3);
+\draw[arr] (c3) -- (c4);
+\begin{scope}[on background layer]
+  \node[group, fit=(c1)(c4), inner ysep=6pt] (core) {};
+\end{scope}
+\node[glabel, anchor=north] at (core.south) {Deterministic core (no LLM)};
+\draw[arr] (t3.east) -- (t3.east -| core.west);
+
+% ---------------- cache and data sources ----------------
+\node[draw=gray!60, fill=gray!4, rounded corners=3pt, minimum width=0.6cm, minimum height=5.35cm,
+      anchor=north] (cache) at (12.75, 0.9)
+      {\rotatebox{90}{\scriptsize \textbf{HTTP cache} (1-day TTL; frozen snapshot for evaluation)}};
+\node[data] (s1) at (14.6, 0.55)  {NVD CPE dictionary};
+\node[data] (s2) at (14.6,-0.2)   {deps.dev registries};
+\node[data] (s3) at (14.6,-0.95)  {NVD CVE API 2.0};
+\node[data] (s4) at (14.6,-1.7)   {CVE.org CNA records};
+\node[data] (s5) at (14.6,-2.45)  {OSV advisories};
+\node[data] (s6) at (14.6,-3.2)   {CISA KEV catalog};
+\node[data] (s7) at (14.6,-3.95)  {FIRST EPSS scores};
+\node[data, minimum height=0.8cm] (s8) at (14.6,-6.5) {MITRE CWE + ATT\&CK\\(local BM25 index)};
+\foreach \s in {s1,s2,s3,s4,s5,s6,s7} { \draw[darr] (\s.west) -- (\s.west -| cache.east); }
+\draw[darr] (t1.east) -- (t1.east -| cache.west);
+\draw[darr] (t2.east) -- (t2.east -| cache.west);
+\draw[darr] (t4.east) -- (t4.east -| cache.west);
+\draw[darr] (core.east |- c2) -- (c2 -| cache.west);
+\draw[darr] (core.east |- c3) -- (c3 -| cache.west);
+\draw[darr] (t5.south) |- (s8.west);
+
+% ---------------- offline: training data, fine-tuning, evaluation ----------------
+\node[off] (lora) at (0,-2.6)  {\textbf{LoRA fine-tuning}\\loss on assistant turns; V100, 1.8 h};
+\node[off] (gen)  at (0,-4.1)  {\textbf{Training-data generator}\\38 real products; 450 train / 119 test dialogues};
+\node[off, text width=2.7cm] (eval) at (3.1,-5.6)
+      {\textbf{Evaluation harness}\\119 held-out questions, 8 unseen products, 4 backends};
+\draw[arr] (lora.east) -- node[lbl, above=1pt]{adapter} (qwen.west);
+\draw[arr] (gen.north) -- node[lbl, right=1pt]{dialogues} (lora.south);
+\draw[darr] (gen.east) -- node[lbl, below=2pt, pos=0.3, align=center]{reference answers\\from the tools}
+      ([xshift=-10pt]gen.east -| tools.west) |- (t5.west);
+\draw[darr] (eval.north) -- node[lbl, right=1pt, pos=0.25]{asks, scores} (qwen.south);
+\end{tikzpicture}

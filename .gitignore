@@ -24,3 +24,6 @@ data/
 
 # trained adapters (large; copy from the cluster instead)
 outputs/lora*/
+
+# W&B run directories
+wandb/
