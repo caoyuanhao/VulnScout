@@ -1,0 +1,24 @@
+name, memory.total [MiB]
+Tesla V100-SXM2-32GB, 32768 MiB
+`torch_dtype` is deprecated! Use `dtype` instead!
+GPU Tesla V100-SXM2-32GB, weights in torch.float16
+train.jsonl: 450 conversations, 0 longer than 14000 tokens skipped, max 13277 tokens
+test.jsonl: 119 conversations, 0 longer than 14000 tokens skipped, max 9700 tokens
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:01<00:02,  1.27s/it]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:02<00:01,  1.29s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:02<00:00,  1.15it/s]
+`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+trainable params: 33,030,144 || all params: 4,055,498,240 || trainable%: 0.8145
+test loss before training: 0.6457
+epoch 1 step 10/113 loss 0.3649 lr 1.99e-04 454s
+epoch 1 step 20/113 loss 0.1217 lr 1.91e-04 1072s
+epoch 1 step 30/113 loss 0.0323 lr 1.75e-04 1668s
+epoch 1 step 40/113 loss 0.3309 lr 1.52e-04 2167s
+epoch 1 step 50/113 loss 0.0177 lr 1.26e-04 2752s
+epoch 1: test loss 0.0139
+epoch 2 step 60/113 loss 0.0151 lr 9.71e-05 3305s
+epoch 2 step 70/113 loss 0.0058 lr 6.85e-05 3746s
+epoch 2 step 80/113 loss 0.0044 lr 4.26e-05 4319s
+epoch 2 step 90/113 loss 0.0060 lr 2.16e-05 4951s
+epoch 2 step 100/113 loss 0.0043 lr 7.07e-06 5528s
+epoch 2 step 110/113 loss 0.0051 lr 3.81e-07 6024s
+epoch 2: test loss 0.0123
+saved adapter to outputs/lora-qwen3-4b

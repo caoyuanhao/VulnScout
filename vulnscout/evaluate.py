@@ -178,6 +178,8 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--out", type=Path, default=Path("outputs/eval"))
     ap.add_argument("--rescore", type=Path, metavar="JSONL", help="re-score a saved run instead of running a backend")
+    ap.add_argument("--resume", action="store_true", help="keep the answers already saved for this backend and "
+                                                          "run only the remaining questions")
     args = ap.parse_args()
     if args.rescore:
         rescore(args.rescore, args.data)
@@ -188,9 +190,16 @@ def main() -> None:
     records = [json.loads(line) for line in args.data.read_text(encoding="utf-8").splitlines()][:args.limit]
     args.out.mkdir(parents=True, exist_ok=True)
     tag = re.sub(r"[^\w.+-]", "_", args.backend)
+    path = args.out / f"{tag}.jsonl"
     rows, backend = [], None
-    with open(args.out / f"{tag}.jsonl", "w", encoding="utf-8") as f:
+    if args.resume and path.exists():
+        rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        print(f"resuming: {len(rows)} answers already saved", flush=True)
+    done = {r["id"] for r in rows}
+    with open(path, "a" if args.resume else "w", encoding="utf-8") as f:
         for i, rec in enumerate(records, 1):
+            if rec["id"] in done:
+                continue
             ref = reference(rec)
             backend = make_backend(args.backend) if not args.backend.startswith("hf:") or backend is None else backend
             if args.backend.startswith("hf:"):       # reuse the loaded model; reset the conversation

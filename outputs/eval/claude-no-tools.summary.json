@@ -1,0 +1,21 @@
+{
+  "n": 119,
+  "lookup": {
+    "called_lookup": 0.0,
+    "cpes_exact": null,
+    "package_correct": null,
+    "cve_recall": 0.619,
+    "cve_precision": 0.638,
+    "top_cve_mentioned": 0.809,
+    "kev_recall": null,
+    "upgrade_correct": 0.165,
+    "clean_correct": 0.0,
+    "citation_rate": 0.0
+  },
+  "answers_with_hallucinated_cves": 0.782,
+  "hallucinated_cves_total": 380,
+  "special_cases_correct": 0.043,
+  "mean_tool_calls": 0.0,
+  "tool_errors_total": 0,
+  "n_lookup": 96
+}
