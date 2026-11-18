@@ -35,12 +35,29 @@ def parse_tool_calls(text: str, step: int) -> tuple[str, list[ToolCall]]:
     return content, calls
 
 
+def disable_sdpa_gqa() -> None:
+    """Makes transformers repeat the key/value heads instead of passing ``enable_gqa`` to SDPA.
+
+    With ``enable_gqa`` PyTorch 2.6 can only use the FlashAttention or math kernels. GPUs without
+    FlashAttention (e.g. V100) then fall back to the math kernel, which materialises the full
+    heads x L x L attention matrix (about 10 GB for a 13k-token conversation) and runs out of memory.
+    Repeating the 8 KV heads lets SDPA use the memory-efficient kernel, whose memory grows linearly.
+    """
+    try:
+        from transformers.integrations import sdpa_attention
+    except ImportError:
+        return
+    if hasattr(sdpa_attention, "use_gqa_in_sdpa"):
+        sdpa_attention.use_gqa_in_sdpa = lambda *args, **kwargs: False
+
+
 class HFBackend:
     def __init__(self, model_name: str, adapter: str | None = None, max_new_tokens: int = 1500,
                  device: str = "cuda"):
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
+        disable_sdpa_gqa()
         self.torch = torch
         dtype = torch.bfloat16 if torch.cuda.is_bf16_supported(including_emulation=False) else torch.float16
         self.tokenizer = AutoTokenizer.from_pretrained(adapter or model_name)

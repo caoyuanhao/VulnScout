@@ -21,3 +21,6 @@ __pycache__/
 
 # local data
 data/
+
+# trained adapters (large; copy from the cluster instead)
+outputs/lora*/

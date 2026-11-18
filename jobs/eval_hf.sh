@@ -14,5 +14,6 @@ module purge
 module load explorer anaconda3/2024.06
 source $CW/envs/vulnscout/bin/activate
 export HF_HOME=$CW/hf_cache VULNSCOUT_FROZEN=1 VULNSCOUT_AS_OF=$(cat data/AS_OF)
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 nvidia-smi --query-gpu=name,memory.total --format=csv
 python -m vulnscout.evaluate --backend "$1" "${@:2}"

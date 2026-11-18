@@ -18,7 +18,7 @@ import re
 import time
 from pathlib import Path
 
-from .agent import Agent, ClaudeBackend
+from .agent import Agent, Answer, ClaudeBackend
 
 CVE = re.compile(r"CVE-\d{4}-\d{4,}")
 LINKED_CVE = re.compile(r"\[(CVE-\d{4}-\d{4,})\]\(https?://[^)]+\)")
@@ -43,6 +43,11 @@ def reference(record: dict) -> dict:
                 if c["function"]["name"] == "lookup_vulnerabilities":
                     ref["lookup_args"] = c["function"]["arguments"]
     return ref
+
+# the answer must actually tell the user the package or version was not found (an empty answer is wrong)
+NOT_FOUND = re.compile(r"(does ?n[o']t|did ?n[o']t) exist|is ?n[o']t (a )?(known|published|listed)|not (a )?known|"
+                       r"(could ?n[o']t|can ?n[o']t|could not|cannot|did ?n[o']t) find|never (been )?published|"
+                       r"not (been )?published|no (\S+ ){0,3}(release|version|match|package|product)|not found|unknown", re.I)
 
 
 def score(ref: dict, answer) -> dict:
@@ -79,10 +84,10 @@ def score(ref: dict, answer) -> dict:
         if ref.get("upgrade"):
             s["upgrade_correct"] = ref["upgrade"] in text
     elif ref["kind"] == "need_version":
-        s["asked_for_version"] = not answer.tool_calls or "version" in text.lower()
+        s["asked_for_version"] = "version" in text.lower()
         s["correct"] = s["asked_for_version"] and not mentioned
     elif ref["kind"] in ("unknown_package", "unpublished_version"):
-        s["correct"] = not mentioned and not any(c.name == "lookup_vulnerabilities" and not c.is_error
+        s["correct"] = bool(NOT_FOUND.search(text)) and not mentioned and not any(c.name == "lookup_vulnerabilities" and not c.is_error
                                                  and json.loads(c.result).get("affected") for c in answer.tool_calls)
     return s
 
@@ -143,7 +148,15 @@ def main() -> None:
             if args.backend.startswith("hf:"):       # reuse the loaded model; reset the conversation
                 backend.messages = backend.messages[:1]
             t0 = time.perf_counter()
-            answer = Agent(backend).ask(ref["question"])
+            try:
+                answer = Agent(backend).ask(ref["question"])
+            except Exception as e:  # a GPU out-of-memory on one long conversation should not end the run
+                if type(e).__name__ != "OutOfMemoryError":
+                    raise
+                import torch
+                torch.cuda.empty_cache()
+                print(f"[{i}/{len(records)}] {ref['id']}: out of memory, scored as a failed answer", flush=True)
+                answer = Answer(text="")
             row = {"id": ref["id"], "kind": ref["kind"], "question": ref["question"], "answer": answer.text,
                    "tools": [{"name": c.name, "arguments": c.arguments, "error": c.is_error} for c in answer.tool_calls],
                    "seconds": round(time.perf_counter() - t0, 1), "usage": dict(getattr(backend, "usage", {})),

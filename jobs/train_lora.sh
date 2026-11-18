@@ -12,5 +12,6 @@ module purge
 module load explorer anaconda3/2024.06
 source $CW/envs/vulnscout/bin/activate
 export HF_HOME=$CW/hf_cache
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 nvidia-smi --query-gpu=name,memory.total --format=csv
 python finetune/train_lora.py --model Qwen/Qwen3-4B-Instruct-2507 --data data/sft --out outputs/lora-qwen3-4b "$@"

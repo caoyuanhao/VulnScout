@@ -24,9 +24,11 @@ from peft import LoraConfig, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer, get_cosine_schedule_with_warmup
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from vulnscout.hf_backend import disable_sdpa_gqa  # noqa: E402
 from vulnscout.tools import function_schemas  # noqa: E402
 
 TOOLS = function_schemas()
+disable_sdpa_gqa()   # otherwise SDPA uses the O(L^2)-memory math kernel on V100s (see the docstring)
 
 
 def encode(tokenizer, messages: list[dict], max_len: int) -> tuple[list[int], list[int]] | None:
