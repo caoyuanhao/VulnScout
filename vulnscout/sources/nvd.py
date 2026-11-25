@@ -10,6 +10,10 @@ PAGE = 2000
 
 
 def record_url(cve_id: str) -> str:
+    """The public page of a vulnerability ID. Findings known only from OSV carry an advisory ID
+    (e.g. GHSA-...) that NVD has no page for, so those link to OSV instead."""
+    if not cve_id.startswith("CVE-"):
+        return f"https://osv.dev/vulnerability/{cve_id}"
     return f"https://nvd.nist.gov/vuln/detail/{cve_id}"
 
 

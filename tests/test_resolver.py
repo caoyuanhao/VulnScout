@@ -113,3 +113,9 @@ def test_ranker_prefers_exploitation_over_severity():
     assert [f.cve.id for f in ranker.cvss_order(fs)] == ["A", "C", "D", "B"]
     assert fs[3].reason.startswith("patch now")
     assert "ransomware" in fs[3].reason
+
+
+def test_record_url_links_advisories_to_osv():
+    from vulnscout.sources import nvd
+    assert nvd.record_url("CVE-2021-44228") == "https://nvd.nist.gov/vuln/detail/CVE-2021-44228"
+    assert nvd.record_url("GHSA-442j-39wm-28r2") == "https://osv.dev/vulnerability/GHSA-442j-39wm-28r2"
